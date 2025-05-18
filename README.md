@@ -1,4 +1,4 @@
-# Hetzner Alert and Kill
+# Hetzner Billing - Auto-Shutdown and Slack Notifications
 
 A GitHub Actions-based monitoring tool that tracks Hetzner server bandwidth usage, sends Slack alerts when thresholds are exceeded, and can automatically shut down servers to prevent excessive bandwidth charges.
 
@@ -8,6 +8,10 @@ This tool monitors your Hetzner Cloud servers' bandwidth usage and:
 - Sends Slack notifications when servers exceed a configurable bandwidth threshold
 - Automatically shuts down servers that exceed a critical bandwidth threshold
 - Provides detailed usage reports via CLI and Slack
+
+It's better to run this as a Github Action than run it on Hetzner, so you're not at risk of accidentally shutting down this script!
+
+It's possible that Hetzner billing can lag, making this not 100% foolproof.
 
 ## Environment Variables
 
@@ -62,6 +66,8 @@ You can customize the monitoring thresholds by adding the following environment 
 - `THRESHOLD_PERCENT_NOTIF`: Percentage of bandwidth usage that triggers a notification (default: 50)
 - `THRESHOLD_PERCENT_KILL`: Percentage of bandwidth usage that triggers server shutdown (default: 90)
 - `SEND_USAGE_NOTIF_ALWAYS`: Set to 'true' to always send usage reports to Slack (default: false)
+
+If you don't want it to kill, set `THRESHOLD_PERCENT_KILL` to a high value. Numbers can be set > 100 if you're OK with some overages.
 
 Example of adding these to your workflow:
 
