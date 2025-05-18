@@ -5,8 +5,8 @@ const { IncomingWebhook } = require('@slack/webhook');
 // Configuration
 const API_TOKEN = process.env.HETZNER_API_TOKEN;
 const SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL; // Set this as an environment variable
-const USAGE_THRESHOLD = 50; // Percentage threshold for alerts
-const DEBUG_ALWAYS_SEND = true; //process.env.DEBUG_ALWAYS_SEND === 'true'; // Set to 'true' to always send to Slack
+const USAGE_THRESHOLD = 10; // Percentage threshold for alerts
+const DEBUG_ALWAYS_SEND = process.env.DEBUG_ALWAYS_SEND === 'true'; // Set to 'true' to always send to Slack
 
 if (!API_TOKEN) {
     console.error('Set HETZNER_API_TOKEN first.');

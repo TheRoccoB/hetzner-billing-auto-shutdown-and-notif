@@ -2,7 +2,7 @@ name: Hetzner Traffic Stats
 
 on:
   schedule:
-    - cron: '*/15 * * * *'  # every 15 minutes
+    - cron: '*/20 * * * *'  # every 20 minutes
   workflow_dispatch:
 
 jobs:
