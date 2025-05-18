@@ -25,6 +25,14 @@ The script uses the following environment variables:
 | `THRESHOLD_PERCENT_KILL` | Percentage threshold for killing servers | 90 | No |
 | `SEND_USAGE_NOTIF_ALWAYS` | Send usage notifications even if no thresholds are exceeded | false | No |
 
+.env template for local testing:
+```
+HETZNER_API_TOKEN=your_hetzner_api_token_here
+SLACK_WEBHOOK_URL=your_slack_webhook_url_here
+THRESHOLD_PERCENT_NOTIF=50
+THRESHOLD_PERCENT_KILL=90
+SEND_USAGE_NOTIF_ALWAYS=false
+```
 ## Setup Instructions
 
 ### 1. Fork Repository and Enable GitHub Actions
@@ -47,6 +55,8 @@ The script uses the following environment variables:
 2. Enable Incoming Webhooks
 3. Create a new webhook URL for your workspace
 4. Copy the webhook URL (you'll need it for GitHub secrets)
+
+[Slack Webhooks Docs](https://api.slack.com/messaging/webhooks)
 
 ### 4. Set Up GitHub Repository Secrets
 
