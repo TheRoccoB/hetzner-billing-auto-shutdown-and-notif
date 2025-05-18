@@ -23,86 +23,37 @@ The script uses the following environment variables:
 
 ## Setup Instructions
 
-### 1. Create a Hetzner API Token
+### 1. Fork Repository and Enable GitHub Actions
+
+1. Fork this repository by clicking the "Fork" button at the top right of this page
+2. Go to your forked repository (e.g., `https://github.com/YOUR-USERNAME/hetzner-alert-and-kill`)
+3. Navigate to the "Actions" tab
+4. Click the "I understand my workflows, go ahead and enable them" button to enable GitHub Actions
+
+### 2. Create a Hetzner API Token
 
 1. Log in to your [Hetzner Cloud Console](https://console.hetzner.cloud/)
 2. Navigate to Security → API Tokens
 3. Create a new API token with read and write permissions
 4. Copy the token (you'll need it for GitHub secrets)
 
-### 2. Create a Slack Webhook (Optional)
+### 3. Create a Slack Webhook (Optional)
 
 1. Create a new Slack app at [api.slack.com/apps](https://api.slack.com/apps)
 2. Enable Incoming Webhooks
 3. Create a new webhook URL for your workspace
 4. Copy the webhook URL (you'll need it for GitHub secrets)
 
-### 3. Set Up GitHub Repository Secrets
+### 4. Set Up GitHub Repository Secrets
 
 1. Go to your repository's Settings → Secrets and variables → Actions
 2. Add the following repository secrets:
    - `HETZNER_API_TOKEN`: Your Hetzner API token
    - `SLACK_WEBHOOK_URL`: Your Slack webhook URL (optional)
 
-### 4. Add package.json
+### 5. Modify GitHub Cron Job
 
-Create a `package.json` file in the root of your repository:
-
-```json
-{
-  "name": "hetzner-alert-and-kill",
-  "version": "1.0.0",
-  "description": "GitHub cron job that sends Slack alerts and kills Hetzner servers if necessary",
-  "main": "scripts/monitor.js",
-  "dependencies": {
-    "axios": "^1.4.0",
-    "cli-table3": "^0.6.3",
-    "@slack/webhook": "^6.1.0"
-  },
-  "scripts": {
-    "monitor": "node scripts/monitor.js"
-  }
-}
-```
-
-### 5. Update GitHub Actions Workflow
-
-Update your `.github/workflows/monitor.yml` file to use `npm install` instead of installing individual packages:
-
-```yaml
-name: Hetzner Traffic Stats
-
-on:
-  schedule:
-    - cron: '*/20 * * * *'  # every 20 minutes
-  workflow_dispatch:
-
-jobs:
-  traffic-stats:
-    runs-on: ubuntu-latest
-    timeout-minutes: 3
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20'
-      
-      - name: Install dependencies
-        run: npm install
-      
-      - name: Run traffic stats
-        env:
-          HETZNER_API_TOKEN: ${{ secrets.HETZNER_API_TOKEN }}
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          # Optional environment variables:
-          # THRESHOLD_PERCENT_NOTIF: '50'
-          # THRESHOLD_PERCENT_KILL: '90'
-          # SEND_USAGE_NOTIF_ALWAYS: 'false'
-        run: node scripts/monitor.js
-```
+By default, this runs every 20 minutes. You can customize this with the cron job in `monitor.yml`.
 
 ## Customizing Thresholds
 
@@ -117,11 +68,11 @@ Example of adding these to your workflow:
 ```yaml
 - name: Run traffic stats
   env:
-    HETZNER_API_TOKEN: ${{ secrets.HETZNER_API_TOKEN }}
-    SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-    THRESHOLD_PERCENT_NOTIF: '60'
-    THRESHOLD_PERCENT_KILL: '95'
-    SEND_USAGE_NOTIF_ALWAYS: 'true'
+     HETZNER_API_TOKEN: ${{ secrets.HETZNER_API_TOKEN }}
+     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+     THRESHOLD_PERCENT_NOTIF: '60'
+     THRESHOLD_PERCENT_KILL: '95'
+     SEND_USAGE_NOTIF_ALWAYS: 'true'
   run: node scripts/monitor.js
 ```
 
