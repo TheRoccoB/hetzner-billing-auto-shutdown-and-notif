@@ -1,4 +1,4 @@
-name: Hetzner Traffic Stats
+name: Hetzner Billing - Slack Alert and Shutdown Tool
 
 on:
   schedule:
@@ -8,7 +8,7 @@ on:
 jobs:
   traffic-stats:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 5
 
     steps:
       - name: Checkout repo
@@ -20,7 +20,7 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: npm install axios cli-table3 @slack/webhook
+        run: npm ci
 
       - name: Run traffic stats
         env:

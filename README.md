@@ -1,4 +1,4 @@
-# Hetzner Billing - Slack Alert and Shutdown Tool
+# Hetzner Alert and Kill
 
 A GitHub Actions-based monitoring tool that tracks Hetzner server bandwidth usage, sends Slack alerts when thresholds are exceeded, and can automatically shut down servers to prevent excessive bandwidth charges.
 
@@ -44,7 +44,65 @@ The script uses the following environment variables:
    - `HETZNER_API_TOKEN`: Your Hetzner API token
    - `SLACK_WEBHOOK_URL`: Your Slack webhook URL (optional)
 
-The repository already includes a GitHub Actions workflow file (`.github/workflows/monitor.yml`) that runs the monitoring script every 20 minutes.
+### 4. Add package.json
+
+Create a `package.json` file in the root of your repository:
+
+```json
+{
+  "name": "hetzner-alert-and-kill",
+  "version": "1.0.0",
+  "description": "GitHub cron job that sends Slack alerts and kills Hetzner servers if necessary",
+  "main": "scripts/monitor.js",
+  "dependencies": {
+    "axios": "^1.4.0",
+    "cli-table3": "^0.6.3",
+    "@slack/webhook": "^6.1.0"
+  },
+  "scripts": {
+    "monitor": "node scripts/monitor.js"
+  }
+}
+```
+
+### 5. Update GitHub Actions Workflow
+
+Update your `.github/workflows/monitor.yml` file to use `npm install` instead of installing individual packages:
+
+```yaml
+name: Hetzner Traffic Stats
+
+on:
+  schedule:
+    - cron: '*/20 * * * *'  # every 20 minutes
+  workflow_dispatch:
+
+jobs:
+  traffic-stats:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Run traffic stats
+        env:
+          HETZNER_API_TOKEN: ${{ secrets.HETZNER_API_TOKEN }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          # Optional environment variables:
+          # THRESHOLD_PERCENT_NOTIF: '50'
+          # THRESHOLD_PERCENT_KILL: '90'
+          # SEND_USAGE_NOTIF_ALWAYS: 'false'
+        run: node scripts/monitor.js
+```
 
 ## Customizing Thresholds
 
@@ -71,7 +129,7 @@ Example of adding these to your workflow:
 
 ### Automatic Monitoring
 
-The GitHub Action runs automatically according to the schedule defined in the workflow (monitor.yml) file (every 20 minutes).
+The GitHub Action runs automatically according to the schedule defined in the workflow file (every 20 minutes).
 
 ### Manual Monitoring
 
@@ -85,7 +143,7 @@ You can also trigger the workflow manually:
 To run the script locally:
 
 1. Clone the repository
-2. Install dependencies: `npm install axios cli-table3 @slack/webhook`
+2. Install dependencies: `npm install`
 3. Set environment variables:
    ```bash
    export HETZNER_API_TOKEN="your_token_here"
@@ -97,6 +155,11 @@ To run the script locally:
    ```bash
    node scripts/monitor.js
    ```
+
+## Disclaimer
+This script is provided as-is and without warranty. Use it at your own risk!
+
+Remember, by default this will SHUT DOWN your servers at 90% usage. Make sure you understand the implications of this before running it in production.
 
 ## License
 

@@ -1,0 +1,14 @@
+{
+  "name": "hetzner-alert-and-kill",
+  "version": "1.0.0",
+  "description": "Monitor and manage Hetzner servers based on traffic",
+  "main": "scripts/monitor.js",
+  "scripts": {
+    "monitor": "node scripts/monitor.js"
+  },
+  "dependencies": {
+    "@slack/webhook": "^7.0.5",
+    "axios": "^1.9.0",
+    "cli-table3": "^0.6.5"
+  }
+}
