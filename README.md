@@ -45,6 +45,10 @@ export THRESHOLD_PERCENT_KILL=90
 export SEND_USAGE_NOTIF_ALWAYS=false
 export OBFUSCATE_SERVER_NAMES_FROM_CONSOLE_LOG=false
 ```
+
+## Limitations
+Github will stop running the action if it's not used for 60 days. I think they'll send you an email to reactivate. This is another solution I came across that might help (and I might eventually integrate directly) https://github.com/marketplace/actions/keepalive-workflow.
+
 ## Setup Instructions
 
 ### 1. Fork Repository and Enable GitHub Actions
