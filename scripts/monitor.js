@@ -234,6 +234,8 @@ async function sendSlackAlert(serversData, allServersData, killedServers = [], i
         ]);
     }
 
+    console.log("v0.0.1");
+
     // Print the table
     console.log(table.toString());
 
