@@ -5,8 +5,9 @@ A GitHub Actions-based monitoring tool that tracks Hetzner server bandwidth usag
 ## Overview
 
 This tool monitors your Hetzner Cloud servers' bandwidth usage and:
-- Sends Slack notifications when servers exceed a configurable bandwidth threshold
-- Automatically shuts down servers that exceed a critical bandwidth threshold
+- Sends Slack notifications when servers exceed a configurable bandwidth threshold (percentage, based on free `included_traffic`, 50% by default)
+- Automatically shuts down servers that exceed a critical bandwidth threshold (percentage, based on free `included_traffic`)
+  - Only shuts down servers that exceed critical threshold (90% by default)
 - Provides detailed usage reports via CLI and Slack
 
 It's better to run this as a Github Action than run it on Hetzner, so you're not at risk of accidentally shutting down this script!
@@ -64,7 +65,7 @@ export SEND_USAGE_NOTIF_ALWAYS=false
 
 [Slack Webhooks Docs](https://api.slack.com/messaging/webhooks)
 
-### 4. Set Up GitHub Repository Secrets and environment variables
+### 4. Set Up GitHub Repository Secrets and Environment Variables
 
 1. Go to your repository's Settings → Secrets and variables → Actions → New repository secret
 2. Add the following repository secrets:

@@ -75,7 +75,8 @@ async function sendSlackAlert(serversData, allServersData, killedServers = [], s
         headerText = "🚨 Server Bandwidth Alert - Servers Killed 🚨";
         subheaderText = `*${killedServers.length} server(s)* have been shut down for exceeding ${THRESHOLD_PERCENT_KILL}% bandwidth usage.\n` +
             `*${serversToReport.length} server(s)* have exceeded ${THRESHOLD_PERCENT_NOTIF}% bandwidth usage:` +
-            `\n\nTo re-enable servers, go to https://console.hetzner.cloud/`;
+            `\n\nTo re-enable servers, go to https://console.hetzner.cloud/` +
+            `\n\nIMPORTANT: The next time this script runs on cron, it will disable the servers again. To prevent this adjust THRESHOLD_PERCENT_KILL in Repository settings -> Actions -> Variables.`;
 
         // If there are also servers above notification threshold, mention them
         if (serversData.length > 0) {
