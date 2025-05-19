@@ -2,6 +2,15 @@ const axios = require('axios');
 const Table = require('cli-table3');
 const { IncomingWebhook } = require('@slack/webhook');
 
+console.log("hetzner-billing-auto-shutdown-and-notif v0.0.1\n");
+console.log('Environment Variables:');
+console.log('HETZNER_API_TOKEN:', process.env.HETZNER_API_TOKEN ? '<found, but not printing>' : '<not found>');
+console.log('SLACK_WEBHOOK_URL:', process.env.SLACK_WEBHOOK_URL ? '<found, but not printing>' : '<not found>');
+console.log('THRESHOLD_PERCENT_NOTIF:', process.env.THRESHOLD_PERCENT_NOTIF || '50 (default)');
+console.log('THRESHOLD_PERCENT_KILL:', process.env.THRESHOLD_PERCENT_KILL || '90 (default)');
+console.log('SEND_USAGE_NOTIF_ALWAYS:', process.env.SEND_USAGE_NOTIF_ALWAYS || 'false (default)');
+console.log('-----------------------------------');
+
 // Configuration
 const API_TOKEN = process.env.HETZNER_API_TOKEN;
 const SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL; // Set this as an environment variable
@@ -233,8 +242,6 @@ async function sendSlackAlert(serversData, allServersData, killedServers = [], i
             action
         ]);
     }
-
-    console.log("v0.0.1");
 
     // Print the table
     console.log(table.toString());
