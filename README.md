@@ -18,6 +18,9 @@ Not tested with Robot (Dedicated) servers.
 
 **With default settings, this will SHUT DOWN (but not destroy) a server at 90% usage. Make sure you understand the implications of this before running it.**
 
+## Slack View
+![Slack](images/slack.png)
+
 ## Environment Variables
 
 The script uses the following environment variables:
