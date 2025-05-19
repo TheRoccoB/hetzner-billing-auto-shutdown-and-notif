@@ -26,4 +26,7 @@ jobs:
         env:
           HETZNER_API_TOKEN: ${{ secrets.HETZNER_API_TOKEN }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          THRESHOLD_PERCENT_NOTIF: ${{ vars.THRESHOLD_PERCENT_NOTIF }}
+          THRESHOLD_PERCENT_KILL: ${{ vars.THRESHOLD_PERCENT_KILL }}
+          SEND_USAGE_NOTIF_ALWAYS: ${{ vars.SEND_USAGE_NOTIF_ALWAYS }}
         run: node scripts/monitor.js
