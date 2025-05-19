@@ -110,7 +110,7 @@ To run the script locally:
 3. Set environment variables:
    ```bash
    export HETZNER_API_TOKEN="your_token_here"
-   export SLACK_WEBHOOK_URL="https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX"
+   export SLACK_WEBHOOK_URL="https://hooks.slack.com/services/..."
    export THRESHOLD_PERCENT_NOTIF="50"
    export THRESHOLD_PERCENT_KILL="90"
    export SEND_USAGE_NOTIF_ALWAYS: 'true'
