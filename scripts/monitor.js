@@ -28,10 +28,24 @@ if (!API_TOKEN) {
 const slackWebhook = SLACK_WEBHOOK_URL ? new IncomingWebhook(SLACK_WEBHOOK_URL) : null;
 
 async function fetchServers() {
-    const res = await axios.get('https://api.hetzner.cloud/v1/servers', {
-        headers: { Authorization: `Bearer ${API_TOKEN}` }
-    });
-    return res.data.servers;
+    try {
+        const res = await axios.get('https://api.hetzner.cloud/v1/servers', {
+            headers: { Authorization: `Bearer ${API_TOKEN}` }
+        });
+        return res.data.servers;
+    } catch (err) {
+        const msg = `:warning: Error fetching Hetzner servers: ${err.message}`;
+        console.error(msg);
+        if (slackWebhook) {
+            try {
+                await slackWebhook.send({ text: msg });
+            } catch (slackErr) {
+                console.error(`Failed to send Slack alert: ${slackErr.message}`);
+            }
+        }
+        // decide whether to exit or return an empty list
+        process.exit(1);
+    }
 }
 
 async function stopServer(serverId) {
