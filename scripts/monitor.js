@@ -57,8 +57,6 @@ function calculatePercentage(used, total) {
 }
 
 async function sendSlackAlert(serversData, allServersData, killedServers = [], sendAlways = false) {
-    if (!slackWebhook) return;
-
     // Don't send anything if there's nothing to report and we're not in sendAlways mode
     if (!sendAlways && serversData.length === 0 && killedServers.length === 0) return;
 
@@ -74,7 +72,7 @@ async function sendSlackAlert(serversData, allServersData, killedServers = [], s
         // Highest priority: Servers were killed
         headerText = "🚨 Server Bandwidth Alert - Servers Killed 🚨";
         subheaderText = `*${killedServers.length} server(s)* have been shut down for exceeding ${THRESHOLD_PERCENT_KILL}% bandwidth usage.\n` +
-            `*${serversToReport.length} server(s)* have exceeded ${THRESHOLD_PERCENT_NOTIF}% bandwidth usage:` +
+            `*${serversToReport.length} server(s)* have exceeded ${THRESHOLD_PERCENT_NOTIF}% notification bandwidth usage:` +
             `\n\nTo re-enable servers, go to https://console.hetzner.cloud/` +
             `\n\nIMPORTANT: The next time this script runs on cron, it will disable the servers again. To prevent this adjust THRESHOLD_PERCENT_KILL in Repository settings -> Actions -> Variables.`;
 
@@ -164,11 +162,36 @@ async function sendSlackAlert(serversData, allServersData, killedServers = [], s
 
     const message = { blocks };
 
-    try {
-        await slackWebhook.send(message);
-        console.log(`Slack ${sendAlways && serversData.length === 0 && killedServers.length === 0 ? 'report' : 'alert'} sent for ${serversToReport.length} server(s)${killedServers.length > 0 ? ` and ${killedServers.length} killed server(s)` : ''}`);
-    } catch (error) {
-        console.error('Error sending Slack message:', error.message);
+    // Always print to console
+    console.log('\n--- Alert Message ---');
+    console.log(headerText);
+    console.log(subheaderText);
+
+    if (killedServers.length > 0) {
+        console.log('\nServers that were shut down:');
+        killedServers.forEach(server => {
+            console.log(`${server.name} (was ${server.status}): ${server.usagePercentage} used (${server.outgoingTB} TB of ${server.limitTB} TB) - SHUT DOWN`);
+        });
+    }
+
+    if (serversToReport.length > 0) {
+        console.log('\nServers with high usage:');
+        serversToReport.forEach(server => {
+            console.log(`${server.name} (${server.status}): ${server.usagePercentage} used (${server.outgoingTB} TB of ${server.limitTB} TB)`);
+        });
+    }
+    console.log('--------------------\n');
+
+    // Send to Slack if webhook is available
+    if (slackWebhook) {
+        try {
+            await slackWebhook.send(message);
+            console.log(`Slack ${sendAlways && serversData.length === 0 && killedServers.length === 0 ? 'report' : 'alert'} sent for ${serversToReport.length} server(s)${killedServers.length > 0 ? ` and ${killedServers.length} killed server(s)` : ''}`);
+        } catch (error) {
+            console.error('Error sending Slack message:', error.message);
+        }
+    } else {
+        console.log('Slack webhook not configured. Alert message only printed to console.');
     }
 }
 
@@ -256,18 +279,7 @@ async function sendSlackAlert(serversData, allServersData, killedServers = [], s
         }
     }
 
-    // Send Slack alert if there are servers with high usage, killed servers, or in sendAlways mode
-    if (slackWebhook) {
-        await sendSlackAlert(highUsageServers, allServersData, killedServers, SEND_USAGE_NOTIF_ALWAYS);
-    } else if (highUsageServers.length > 0 || killedServers.length > 0 || SEND_USAGE_NOTIF_ALWAYS) {
-        if (SEND_USAGE_NOTIF_ALWAYS) {
-            console.log('\nSEND ALWAYS MODE: Would have sent all server data to Slack.');
-        } else {
-            console.log(`\nWARNING: ${highUsageServers.length} server(s) exceed ${THRESHOLD_PERCENT_NOTIF}% usage threshold.`);
-            if (killedServers.length > 0) {
-                console.log(`ALERT: ${killedServers.length} server(s) were shut down for exceeding ${THRESHOLD_PERCENT_KILL}% usage threshold.`);
-            }
-        }
-        console.log('Set SLACK_WEBHOOK_URL environment variable to receive Slack alerts.');
-    }
+    // Always send alert (to Slack if configured, otherwise just to console)
+    await sendSlackAlert(highUsageServers, allServersData, killedServers, SEND_USAGE_NOTIF_ALWAYS);
 })();
+
