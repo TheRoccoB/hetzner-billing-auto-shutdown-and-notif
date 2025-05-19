@@ -6,8 +6,8 @@ const { IncomingWebhook } = require('@slack/webhook');
 const API_TOKEN = process.env.HETZNER_API_TOKEN;
 const SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL; // Set this as an environment variable
 
-const THRESHOLD_PERCENT_NOTIF = parseInt(process.env.THRESHOLD_PERCENT_NOTIF || '50', 10); // Percentage threshold for alerts
-const THRESHOLD_PERCENT_KILL = parseInt(process.env.THRESHOLD_PERCENT_KILL || '90', 10); // Percentage threshold for killing servers
+const THRESHOLD_PERCENT_NOTIF = parseFloat(process.env.THRESHOLD_PERCENT_NOTIF || '50'); // Percentage threshold for alerts
+const THRESHOLD_PERCENT_KILL = parseFloat(process.env.THRESHOLD_PERCENT_KILL || '90'); // Percentage threshold for killing servers
 const SEND_USAGE_NOTIF_ALWAYS = process.env.SEND_USAGE_NOTIF_ALWAYS === 'true'; // Set to 'true' to always send to Slack
 
 if (!API_TOKEN) {
@@ -48,24 +48,39 @@ function calculatePercentage(used, total) {
 }
 
 async function sendSlackAlert(serversData, allServersData, killedServers = [], isDebug = false) {
-    if (!slackWebhook || (!isDebug && serversData.length === 0 && killedServers.length === 0)) return;
+    if (!slackWebhook) return;
 
-    // If in debug mode and no servers exceed threshold, send all servers
-    const serversToReport = isDebug && serversData.length === 0 && killedServers.length === 0 ?
-        allServersData : serversData;
+    // Don't send anything if there's nothing to report and we're not in debug mode
+    if (!isDebug && serversData.length === 0 && killedServers.length === 0) return;
 
     let headerText, subheaderText;
+    let serversToReport = serversData;
+
+    // Priority logic:
+    // 1. If servers were killed, that's highest priority
+    // 2. If servers exceeded notification threshold, that's next priority
+    // 3. If in debug mode and nothing else to report, show all servers
 
     if (killedServers.length > 0) {
+        // Highest priority: Servers were killed
         headerText = "🚨 Server Bandwidth Alert - Servers Killed 🚨";
         subheaderText = `*${killedServers.length} server(s)* have been shut down for exceeding ${THRESHOLD_PERCENT_KILL}% bandwidth usage.\n` +
-            `*${serversToReport.length} server(s)* have exceeded ${THRESHOLD_PERCENT_NOTIF}% bandwidth usage:`;
-    } else if (isDebug && serversData.length === 0) {
-        headerText = "🔍 Debug: Server Bandwidth Report";
-        subheaderText = `*Debug Mode*: Showing all ${serversToReport.length} server(s)`;
-    } else {
+            `*${serversToReport.length} server(s)* have exceeded ${THRESHOLD_PERCENT_NOTIF}% bandwidth usage:` +
+            `\n\nTo re-enable servers, go to https://console.hetzner.cloud/`;
+
+        // If there are also servers above notification threshold, mention them
+        if (serversData.length > 0) {
+            subheaderText += `\n*${serversData.length} additional server(s)* have exceeded ${THRESHOLD_PERCENT_NOTIF}% bandwidth usage:`;
+        }
+    } else if (serversData.length > 0) {
+        // Second priority: Servers exceeded notification threshold
         headerText = "⚠️ Server Bandwidth Alert ⚠️";
-        subheaderText = `*${serversToReport.length} server(s)* have exceeded ${THRESHOLD_PERCENT_NOTIF}% bandwidth usage:`;
+        subheaderText = `*${serversData.length} server(s)* have exceeded ${THRESHOLD_PERCENT_NOTIF}% bandwidth usage:`;
+    } else if (isDebug) {
+        // Lowest priority: Debug mode with no alerts
+        headerText = "🔍 Server Bandwidth Report";
+        subheaderText = `*Debug Mode*: Showing all ${allServersData.length} server(s)`;
+        serversToReport = allServersData; // Use all servers for debug report
     }
 
     const blocks = [
@@ -114,8 +129,18 @@ async function sendSlackAlert(serversData, allServersData, killedServers = [], i
         }
     }
 
-    // Add notification servers
+    // Add notification servers or all servers (in debug mode)
     if (serversToReport.length > 0) {
+        if (killedServers.length > 0) {
+            blocks.push({
+                type: "section",
+                text: {
+                    type: "mrkdwn",
+                    text: "*Other servers with high usage:*"
+                }
+            });
+        }
+
         serversToReport.forEach(server => {
             blocks.push({
                 type: "section",
@@ -131,7 +156,7 @@ async function sendSlackAlert(serversData, allServersData, killedServers = [], i
 
     try {
         await slackWebhook.send(message);
-        console.log(`Slack ${isDebug ? 'debug report' : 'alert'} sent for ${serversToReport.length} server(s)${killedServers.length > 0 ? ` and ${killedServers.length} killed server(s)` : ''}`);
+        console.log(`Slack ${isDebug && serversData.length === 0 && killedServers.length === 0 ? 'debug report' : 'alert'} sent for ${serversToReport.length} server(s)${killedServers.length > 0 ? ` and ${killedServers.length} killed server(s)` : ''}`);
     } catch (error) {
         console.error('Error sending Slack message:', error.message);
     }
@@ -168,9 +193,10 @@ async function sendSlackAlert(serversData, allServersData, killedServers = [], i
             s.included_traffic || 0
         );
 
-        // Calculate raw percentage for comparison
+        // Calculate raw percentage for comparison (as decimal, not percentage)
         const rawPercentage = s.included_traffic ?
-            ((s.outgoing_traffic || 0) / s.included_traffic) * 100 : 0;
+            (s.outgoing_traffic || 0) / s.included_traffic : 0;
+
 
         let action = 'None';
 
@@ -187,13 +213,13 @@ async function sendSlackAlert(serversData, allServersData, killedServers = [], i
         // Add to all servers data for debug mode
         allServersData.push(serverData);
 
-        // Check if usage exceeds kill threshold
-        if (rawPercentage >= THRESHOLD_PERCENT_KILL) {
+        // Check if usage exceeds kill threshold (convert threshold from percentage to decimal)
+        if (rawPercentage >= THRESHOLD_PERCENT_KILL / 100) {
             serversToKill.push(serverData);
             action = 'KILL';
         }
-        // Check if usage exceeds notification threshold
-        else if (rawPercentage >= THRESHOLD_PERCENT_NOTIF) {
+        // Check if usage exceeds notification threshold (convert threshold from percentage to decimal)
+        else if (rawPercentage >= THRESHOLD_PERCENT_NOTIF / 100) {
             highUsageServers.push(serverData);
             action = 'NOTIFY';
         }

@@ -11,11 +11,17 @@ This tool monitors your Hetzner Cloud servers' bandwidth usage and:
 
 It's better to run this as a Github Action than run it on Hetzner, so you're not at risk of accidentally shutting down this script!
 
-It's possible that Hetzner billing can lag, making this not 100% foolproof.
+It's possible that Hetzner billing can lag, so you this might not fully prevent excess usage.
+
+Not tested with Robot (Dedicated) servers.
+
+**With default settings, this will SHUT DOWN (but not destroy) a server at 90% usage. Make sure you understand the implications of this before running it.**
 
 ## Environment Variables
 
 The script uses the following environment variables:
+
+*Important: Percentages are 0-100, not 0-1!*
 
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
@@ -27,11 +33,11 @@ The script uses the following environment variables:
 
 .env template for local testing:
 ```
-HETZNER_API_TOKEN=your_hetzner_api_token_here
-SLACK_WEBHOOK_URL=your_slack_webhook_url_here
-THRESHOLD_PERCENT_NOTIF=50
-THRESHOLD_PERCENT_KILL=90
-SEND_USAGE_NOTIF_ALWAYS=false
+export HETZNER_API_TOKEN=your_hetzner_api_token_here
+export SLACK_WEBHOOK_URL=your_slack_webhook_url_here
+export THRESHOLD_PERCENT_NOTIF=50
+export THRESHOLD_PERCENT_KILL=90
+export SEND_USAGE_NOTIF_ALWAYS=false
 ```
 ## Setup Instructions
 
@@ -46,7 +52,7 @@ SEND_USAGE_NOTIF_ALWAYS=false
 
 1. Log in to your [Hetzner Cloud Console](https://console.hetzner.cloud/)
 2. Navigate to Security → API Tokens
-3. Create a new API token with read and write permissions
+3. Create a new API token with read and write permissions (write required for shutdown)
 4. Copy the token (you'll need it for GitHub secrets)
 
 ### 3. Create a Slack Webhook (Optional)
@@ -58,39 +64,23 @@ SEND_USAGE_NOTIF_ALWAYS=false
 
 [Slack Webhooks Docs](https://api.slack.com/messaging/webhooks)
 
-### 4. Set Up GitHub Repository Secrets
+### 4. Set Up GitHub Repository Secrets and environment variables
 
-1. Go to your repository's Settings → Secrets and variables → Actions
+1. Go to your repository's Settings → Secrets and variables → Actions → New repository secret
 2. Add the following repository secrets:
    - `HETZNER_API_TOKEN`: Your Hetzner API token
    - `SLACK_WEBHOOK_URL`: Your Slack webhook URL (optional)
-
-### 5. Modify GitHub Cron Job
-
-By default, this runs every 20 minutes. You can customize this with the cron job in `monitor.yml`.
-
-## Customizing Thresholds
-
-You can customize the monitoring thresholds by adding the following environment variables to your GitHub workflow file:
-
+3. You can customize the monitoring thresholds by adding the following environment variables (Repository settings -> Actions -> Variables -> New repository variable):
 - `THRESHOLD_PERCENT_NOTIF`: Percentage of bandwidth usage that triggers a notification (default: 50)
 - `THRESHOLD_PERCENT_KILL`: Percentage of bandwidth usage that triggers server shutdown (default: 90)
 - `SEND_USAGE_NOTIF_ALWAYS`: Set to 'true' to always send usage reports to Slack (default: false)
 
 If you don't want it to kill, set `THRESHOLD_PERCENT_KILL` to a high value. Numbers can be set > 100 if you're OK with some overages.
 
-Example of adding these to your workflow:
 
-```yaml
-- name: Run traffic stats
-  env:
-     HETZNER_API_TOKEN: ${{ secrets.HETZNER_API_TOKEN }}
-     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-     THRESHOLD_PERCENT_NOTIF: '60'
-     THRESHOLD_PERCENT_KILL: '95'
-     SEND_USAGE_NOTIF_ALWAYS: 'true'
-  run: node scripts/monitor.js
-```
+### 5. Modify GitHub Cron Job
+
+By default, this runs every 20 minutes. You can customize this with the cron job in `monitor.yml`.
 
 ## Usage
 
@@ -107,6 +97,8 @@ You can also trigger the workflow manually:
 
 ## Running Locally
 
+**Note: with the settings below, if you're over 90% usage, it will shut down your server!**
+
 To run the script locally:
 
 1. Clone the repository
@@ -114,9 +106,10 @@ To run the script locally:
 3. Set environment variables:
    ```bash
    export HETZNER_API_TOKEN="your_token_here"
-   export SLACK_WEBHOOK_URL="your_webhook_url_here"
+   export SLACK_WEBHOOK_URL="https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX"
    export THRESHOLD_PERCENT_NOTIF="50"
    export THRESHOLD_PERCENT_KILL="90"
+   export SEND_USAGE_NOTIF_ALWAYS: 'true'
    ```
 4. Run the script:
    ```bash
@@ -125,8 +118,6 @@ To run the script locally:
 
 ## Disclaimer
 This script is provided as-is and without warranty. Use it at your own risk!
-
-Remember, by default this will SHUT DOWN your servers at 90% usage. Make sure you understand the implications of this before running it in production.
 
 ## License
 
