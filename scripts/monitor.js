@@ -9,6 +9,7 @@ console.log('SLACK_WEBHOOK_URL:', process.env.SLACK_WEBHOOK_URL ? '<found, but n
 console.log('THRESHOLD_PERCENT_NOTIF:', process.env.THRESHOLD_PERCENT_NOTIF || '50 (default)');
 console.log('THRESHOLD_PERCENT_KILL:', process.env.THRESHOLD_PERCENT_KILL || '90 (default)');
 console.log('SEND_USAGE_NOTIF_ALWAYS:', process.env.SEND_USAGE_NOTIF_ALWAYS || 'false (default)');
+console.log('OBFUSCATE_SERVER_NAMES_FROM_CONSOLE_LOG:', process.env.OBFUSCATE_SERVER_NAMES_FROM_CONSOLE_LOG || 'false (default)');
 console.log('-----------------------------------');
 
 // Configuration
@@ -18,10 +19,24 @@ const SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL; // Set this as an envir
 const THRESHOLD_PERCENT_NOTIF = parseFloat(process.env.THRESHOLD_PERCENT_NOTIF || '50'); // Percentage threshold for alerts
 const THRESHOLD_PERCENT_KILL = parseFloat(process.env.THRESHOLD_PERCENT_KILL || '90'); // Percentage threshold for killing servers
 const SEND_USAGE_NOTIF_ALWAYS = process.env.SEND_USAGE_NOTIF_ALWAYS === 'true'; // Set to 'true' to always send to Slack
+const OBFUSCATE_SERVER_NAMES = process.env.OBFUSCATE_SERVER_NAMES_FROM_CONSOLE_LOG === 'true'; // Set to 'true' to obfuscate server names in console logs
 
 if (!API_TOKEN) {
     console.error('Set HETZNER_API_TOKEN first.');
     process.exit(1);
+}
+
+// Function to obfuscate server names
+function obfuscateServerName(name) {
+    if (!OBFUSCATE_SERVER_NAMES || !name) return name;
+
+    if (name.length <= 2) return name; // Don't obfuscate very short names
+
+    const firstChar = name.charAt(0);
+    const lastChar = name.charAt(name.length - 1);
+    const middleLength = name.length - 2;
+
+    return `${firstChar}${'X'.repeat(middleLength)}${lastChar}`;
 }
 
 // Initialize Slack webhook if URL is provided
@@ -184,14 +199,14 @@ async function sendSlackAlert(serversData, allServersData, killedServers = [], s
     if (killedServers.length > 0) {
         console.log('\nServers that were shut down:');
         killedServers.forEach(server => {
-            console.log(`${server.name} (was ${server.status}): ${server.usagePercentage} used (${server.outgoingTB} TB of ${server.limitTB} TB) - SHUT DOWN`);
+            console.log(`${obfuscateServerName(server.name)} (was ${server.status}): ${server.usagePercentage} used (${server.outgoingTB} TB of ${server.limitTB} TB) - SHUT DOWN`);
         });
     }
 
     if (serversToReport.length > 0) {
         console.log('\nServers with high usage:');
         serversToReport.forEach(server => {
-            console.log(`${server.name} (${server.status}): ${server.usagePercentage} used (${server.outgoingTB} TB of ${server.limitTB} TB)`);
+            console.log(`${obfuscateServerName(server.name)} (${server.status}): ${server.usagePercentage} used (${server.outgoingTB} TB of ${server.limitTB} TB)`);
         });
     }
     console.log('--------------------\n');
@@ -272,7 +287,7 @@ async function sendSlackAlert(serversData, allServersData, killedServers = [], s
         }
 
         table.push([
-            s.name,
+            obfuscateServerName(s.name),
             s.status,
             outgoingTB,
             limitTB,
@@ -286,7 +301,7 @@ async function sendSlackAlert(serversData, allServersData, killedServers = [], s
 
     // Kill servers that exceed the kill threshold
     for (const server of serversToKill) {
-        console.log(`Server ${server.name} (${server.id}) exceeds kill threshold with ${server.usagePercentage} usage. Shutting down...`);
+        console.log(`Server ${obfuscateServerName(server.name)} (${server.id}) exceeds kill threshold with ${server.usagePercentage} usage. Shutting down...`);
         const success = await stopServer(server.id);
         if (success) {
             killedServers.push(server);

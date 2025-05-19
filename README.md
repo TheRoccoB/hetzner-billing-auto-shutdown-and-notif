@@ -34,6 +34,7 @@ The script uses the following environment variables:
 | `THRESHOLD_PERCENT_NOTIF` | Percentage threshold for alerts | 50 | No |
 | `THRESHOLD_PERCENT_KILL` | Percentage threshold for killing servers | 90 | No |
 | `SEND_USAGE_NOTIF_ALWAYS` | Send usage notifications even if no thresholds are exceeded | false | No |
+| `OBFUSCATE_SERVER_NAMES_FROM_CONSOLE_LOG` | Hide server names in console output for privacy | false | No |
 
 .env template for local testing:
 ```
@@ -42,6 +43,7 @@ export SLACK_WEBHOOK_URL=your_slack_webhook_url_here
 export THRESHOLD_PERCENT_NOTIF=50
 export THRESHOLD_PERCENT_KILL=90
 export SEND_USAGE_NOTIF_ALWAYS=false
+export OBFUSCATE_SERVER_NAMES_FROM_CONSOLE_LOG=false
 ```
 ## Setup Instructions
 
@@ -78,6 +80,7 @@ export SEND_USAGE_NOTIF_ALWAYS=false
 - `THRESHOLD_PERCENT_NOTIF`: Percentage of bandwidth usage that triggers a notification (default: 50)
 - `THRESHOLD_PERCENT_KILL`: Percentage of bandwidth usage that triggers server shutdown (default: 90)
 - `SEND_USAGE_NOTIF_ALWAYS`: Set to 'true' to always send usage reports to Slack (default: false)
+- `OBFUSCATE_SERVER_NAMES_FROM_CONSOLE_LOG`: Set to 'true' to hide server names in console output for privacy (default: false)
 
 If you don't want it to kill, set `THRESHOLD_PERCENT_KILL` to a high value. Numbers can be set > 100 if you're OK with some overages.
 
@@ -114,6 +117,7 @@ To run the script locally:
    export THRESHOLD_PERCENT_NOTIF="50"
    export THRESHOLD_PERCENT_KILL="90"
    export SEND_USAGE_NOTIF_ALWAYS: 'true'
+   export OBFUSCATE_SERVER_NAMES_FROM_CONSOLE_LOG="false" 
    ```
 4. Run the script:
    ```bash
