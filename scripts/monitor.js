@@ -56,11 +56,11 @@ function calculatePercentage(used, total) {
     return ((used / total) * 100).toFixed(4) + '%';
 }
 
-async function sendSlackAlert(serversData, allServersData, killedServers = [], isDebug = false) {
+async function sendSlackAlert(serversData, allServersData, killedServers = [], sendAlways = false) {
     if (!slackWebhook) return;
 
-    // Don't send anything if there's nothing to report and we're not in debug mode
-    if (!isDebug && serversData.length === 0 && killedServers.length === 0) return;
+    // Don't send anything if there's nothing to report and we're not in sendAlways mode
+    if (!sendAlways && serversData.length === 0 && killedServers.length === 0) return;
 
     let headerText, subheaderText;
     let serversToReport = serversData;
@@ -68,7 +68,7 @@ async function sendSlackAlert(serversData, allServersData, killedServers = [], i
     // Priority logic:
     // 1. If servers were killed, that's highest priority
     // 2. If servers exceeded notification threshold, that's next priority
-    // 3. If in debug mode and nothing else to report, show all servers
+    // 3. If in sendAlways mode and nothing else to report, show all servers
 
     if (killedServers.length > 0) {
         // Highest priority: Servers were killed
@@ -85,11 +85,11 @@ async function sendSlackAlert(serversData, allServersData, killedServers = [], i
         // Second priority: Servers exceeded notification threshold
         headerText = "⚠️ Server Bandwidth Alert ⚠️";
         subheaderText = `*${serversData.length} server(s)* have exceeded ${THRESHOLD_PERCENT_NOTIF}% bandwidth usage:`;
-    } else if (isDebug) {
-        // Lowest priority: Debug mode with no alerts
+    } else if (sendAlways) {
+        // Lowest priority: Send always mode with no alerts
         headerText = "🔍 Server Bandwidth Report";
-        subheaderText = `*Debug Mode*: Showing all ${allServersData.length} server(s)`;
-        serversToReport = allServersData; // Use all servers for debug report
+        subheaderText = `Showing all ${allServersData.length} server(s)`;
+        serversToReport = allServersData; // Use all servers for sendAlways report
     }
 
     const blocks = [
@@ -138,7 +138,7 @@ async function sendSlackAlert(serversData, allServersData, killedServers = [], i
         }
     }
 
-    // Add notification servers or all servers (in debug mode)
+    // Add notification servers or all servers (in sendAlways mode)
     if (serversToReport.length > 0) {
         if (killedServers.length > 0) {
             blocks.push({
@@ -165,7 +165,7 @@ async function sendSlackAlert(serversData, allServersData, killedServers = [], i
 
     try {
         await slackWebhook.send(message);
-        console.log(`Slack ${isDebug && serversData.length === 0 && killedServers.length === 0 ? 'debug report' : 'alert'} sent for ${serversToReport.length} server(s)${killedServers.length > 0 ? ` and ${killedServers.length} killed server(s)` : ''}`);
+        console.log(`Slack ${sendAlways && serversData.length === 0 && killedServers.length === 0 ? 'report' : 'alert'} sent for ${serversToReport.length} server(s)${killedServers.length > 0 ? ` and ${killedServers.length} killed server(s)` : ''}`);
     } catch (error) {
         console.error('Error sending Slack message:', error.message);
     }
@@ -188,7 +188,7 @@ async function sendSlackAlert(serversData, allServersData, killedServers = [], i
     const highUsageServers = [];
     // Track servers that need to be killed
     const serversToKill = [];
-    // Track all servers data for debug mode
+    // Track all servers data for sendAlways mode
     const allServersData = [];
     // Track servers that were killed
     const killedServers = [];
@@ -219,7 +219,7 @@ async function sendSlackAlert(serversData, allServersData, killedServers = [], i
             rawPercentage
         };
 
-        // Add to all servers data for debug mode
+        // Add to all servers data for sendAlways mode
         allServersData.push(serverData);
 
         // Check if usage exceeds kill threshold (convert threshold from percentage to decimal)
@@ -255,12 +255,12 @@ async function sendSlackAlert(serversData, allServersData, killedServers = [], i
         }
     }
 
-    // Send Slack alert if there are servers with high usage, killed servers, or in debug mode
+    // Send Slack alert if there are servers with high usage, killed servers, or in sendAlways mode
     if (slackWebhook) {
         await sendSlackAlert(highUsageServers, allServersData, killedServers, SEND_USAGE_NOTIF_ALWAYS);
     } else if (highUsageServers.length > 0 || killedServers.length > 0 || SEND_USAGE_NOTIF_ALWAYS) {
         if (SEND_USAGE_NOTIF_ALWAYS) {
-            console.log('\nDEBUG MODE: Would have sent all server data to Slack.');
+            console.log('\nSEND ALWAYS MODE: Would have sent all server data to Slack.');
         } else {
             console.log(`\nWARNING: ${highUsageServers.length} server(s) exceed ${THRESHOLD_PERCENT_NOTIF}% usage threshold.`);
             if (killedServers.length > 0) {
